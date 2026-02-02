@@ -1,0 +1,136 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Student Class Record by CHINO MA. SANTI F. CANALITA WAS HERE</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background: #4a4a4a;
+            color: #222;
+            padding: 20px;
+        }
+
+        h1 {
+            text-align: center;
+            color: #ffffff;
+        }
+
+        .form-container {
+            background: #5a5a5a;
+            padding: 15px;
+            border-radius: 6px;
+            margin-bottom: 20px;
+        }
+
+        .search-container {
+            background: #5a5a5a !important;
+            padding: 15px;
+            border-radius: 6px;
+            margin-bottom: 20px;
+        }
+
+        input {
+            padding: 8px;
+            margin: 6px;
+            width: 120px;
+            border: 1px solid #999;
+            border-radius: 6px;
+            background: #3a3a3a;
+            color: #ffffff;
+        }
+
+        button {
+            padding: 8px 16px;
+            margin: 6px;
+            cursor: pointer;
+            border: 2px solid;
+            border-radius: 20px;
+            background: rgba(255, 255, 255, 0.1);
+            color: #ffffff;
+            font-weight: bold;
+            transition: all 0.3s ease;
+        }
+
+        button:hover {
+            background: rgba(255, 255, 255, 0.2);
+            transform: scale(1.05);
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            background: #5a5a5a;
+        }
+
+        th, td {
+            border: 1px solid #666;
+            padding: 8px;
+            text-align: center;
+            color: #ffffff;
+        }
+
+        th {
+            background: #3a3a3a;
+            color: #ffffff;
+            font-weight: bold;
+        }
+
+        td {
+            background: #4a4a4a;
+        }
+
+        .delete-btn {
+            border-color: #c62828 !important;
+            color: #ff6b6b !important;
+        }
+
+        .delete-btn:hover {
+            background: rgba(198, 40, 40, 0.2) !important;
+        }
+    </style>
+</head>
+<body>
+
+<h1>Student Class Record</h1>
+
+<div class="form-container">
+    <input id="studentId" placeholder="Student ID">
+    <input id="firstName" placeholder="First Name">
+    <input id="lastName" placeholder="Last Name">
+    <input id="lab1" placeholder="Lab 1">
+    <input id="lab2" placeholder="Lab 2">
+    <input id="lab3" placeholder="Lab 3">
+    <input id="prelim" placeholder="Prelim">
+    <input id="attendance" placeholder="Attendance">
+    <br>
+    <button onclick="addRecord()">Add Student</button>
+    <button onclick="saveRecords()">Save Records</button>
+</div>
+
+<div class="search-container">
+    <input id="searchInput" placeholder="Search by Student ID or Name" style="width: 300px;">
+    <button onclick="searchStudent()">Search</button>
+    <button onclick="clearSearch()">Clear Search</button>
+</div>
+
+<table>
+    <thead>
+        <tr>
+            <th>ID</th>
+            <th>First</th>
+            <th>Last</th>
+            <th>Lab 1</th>
+            <th>Lab 2</th>
+            <th>Lab 3</th>
+            <th>Prelim</th>
+            <th>Attendance</th>
+            <th>Action</th>
+        </tr>
+    </thead>
+    <tbody id="tableBody"></tbody>
+</table>
+
+<script src="script.js"></script>
+</body>
+</html>
