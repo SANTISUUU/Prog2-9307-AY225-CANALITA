@@ -1,0 +1,590 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CSV Analytics Report Generator</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #0066cc 0%, #ff8c00 100%);
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 20px;
+        }
+
+        .container {
+            background: white;
+            border-radius: 15px;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+            padding: 40px;
+            max-width: 600px;
+            width: 100%;
+        }
+
+        h1 {
+            color: #333;
+            margin-bottom: 10px;
+            text-align: center;
+            font-size: 28px;
+        }
+
+        .subtitle {
+            color: #666;
+            text-align: center;
+            margin-bottom: 30px;
+            font-size: 14px;
+        }
+
+        .upload-section {
+            background: #f8f9fa;
+            border: 2px dashed #667eea;
+            border-radius: 10px;
+            padding: 30px;
+            text-align: center;
+            margin-bottom: 20px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .upload-section:hover {
+            background: #f0f1ff;
+            border-color: #764ba2;
+        }
+
+        .upload-section input[type="file"] {
+            display: none;
+        }
+
+        .upload-icon {
+            font-size: 40px;
+            margin-bottom: 10px;
+        }
+
+        .upload-text {
+            color: #333;
+            font-weight: 600;
+            margin-bottom: 5px;
+        }
+
+        .upload-hint {
+            color: #999;
+            font-size: 12px;
+        }
+
+        .file-info {
+            display: none;
+            background: #e8f5e9;
+            border-left: 4px solid #4caf50;
+            padding: 15px;
+            margin-bottom: 20px;
+            border-radius: 5px;
+        }
+
+        .file-info.visible {
+            display: block;
+        }
+
+        .file-name {
+            color: #2e7d32;
+            font-weight: 600;
+            margin-bottom: 5px;
+        }
+
+        .file-size {
+            color: #558b2f;
+            font-size: 12px;
+        }
+
+        .button-group {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 20px;
+        }
+
+        button {
+            flex: 1;
+            padding: 12px 20px;
+            border: none;
+            border-radius: 8px;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .btn-process {
+            background: linear-gradient(135deg, #0066cc 0%, #ff8c00 100%);
+            color: white;
+        }
+
+        .btn-process:hover:not(:disabled) {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 20px rgba(0, 102, 204, 0.4);
+        }
+
+        .btn-process:disabled {
+            background: #ccc;
+            cursor: not-allowed;
+        }
+
+        .btn-download {
+            background: #4caf50;
+            color: white;
+        }
+
+        .btn-download:hover {
+            background: #45a049;
+            transform: translateY(-2px);
+        }
+
+        .btn-reset {
+            background: #f44336;
+            color: white;
+        }
+
+        .btn-reset:hover {
+            background: #da190b;
+            transform: translateY(-2px);
+        }
+
+        .report-section {
+            display: none;
+            background: #f8f9fa;
+            border-radius: 10px;
+            padding: 20px;
+            margin-bottom: 20px;
+        }
+
+        .report-section.visible {
+            display: block;
+        }
+
+        .report-title {
+            color: #333;
+            font-size: 18px;
+            font-weight: 700;
+            margin-bottom: 15px;
+            padding-bottom: 10px;
+            border-bottom: 2px solid #667eea;
+        }
+
+        .report-content {
+            color: #000000;
+            font-size: 14px;
+            line-height: 1.8;
+            white-space: pre-wrap;
+            font-family: 'Courier New', monospace;
+            background: white;
+            padding: 15px;
+            border-radius: 8px;
+            max-height: 400px;
+            overflow-y: auto;
+        }
+
+        .status {
+            text-align: center;
+            padding: 15px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+            display: none;
+        }
+
+        .status.visible {
+            display: block;
+        }
+
+        .status.success {
+            background: #e8f5e9;
+            color: #2e7d32;
+            border-left: 4px solid #4caf50;
+        }
+
+        .status.error {
+            background: #ffebee;
+            color: #c62828;
+            border-left: 4px solid #f44336;
+        }
+
+        .status.loading {
+            background: #e3f2fd;
+            color: #1565c0;
+            border-left: 4px solid #2196f3;
+        }
+
+        .stats-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 15px;
+            margin-bottom: 20px;
+        }
+
+        .stat-box {
+            background: white;
+            padding: 15px;
+            border-radius: 8px;
+            border-left: 4px solid #667eea;
+        }
+
+        .stat-label {
+            color: #999;
+            font-size: 12px;
+            text-transform: uppercase;
+            margin-bottom: 5px;
+        }
+
+        .stat-value {
+            color: #333;
+            font-size: 20px;
+            font-weight: 700;
+        }
+
+        @media (max-width: 500px) {
+            .container {
+                padding: 20px;
+            }
+
+            h1 {
+                font-size: 22px;
+            }
+
+            .button-group {
+                flex-direction: column;
+            }
+
+            .stats-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>📊 CSV Analytics Report</h1>
+        <p class="subtitle">Upload your CSV file to generate a detailed analytics report</p>
+
+        <div class="upload-section" id="uploadSection">
+            <div class="upload-icon">📁</div>
+            <div class="upload-text">Click to Select CSV File</div>
+            <div class="upload-hint">or drag and drop your file here</div>
+            <input type="file" id="fileInput" accept=".csv" />
+        </div>
+
+        <div class="file-info" id="fileInfo">
+            <div class="file-name" id="fileName"></div>
+            <div class="file-size" id="fileSize"></div>
+        </div>
+
+        <div class="status" id="status"></div>
+
+        <div class="stats-grid" id="statsGrid" style="display: none;">
+            <div class="stat-box">
+                <div class="stat-label">Total Records</div>
+                <div class="stat-value" id="totalRecords">0</div>
+            </div>
+            <div class="stat-box">
+                <div class="stat-label">Avg Total Sales</div>
+                <div class="stat-value" id="avgTotalSales">$0.00</div>
+            </div>
+        </div>
+
+        <div class="report-section" id="reportSection">
+            <div class="report-title">Generated Report</div>
+            <div class="report-content" id="reportContent"></div>
+        </div>
+
+        <div class="button-group">
+            <button class="btn-process" id="processBtn" disabled>Process CSV</button>
+            <button class="btn-download" id="downloadBtn" style="display: none;">Download Report</button>
+            <button class="btn-reset" id="resetBtn" style="display: none;">Reset</button>
+        </div>
+    </div>
+
+    <script>
+        let selectedFile = null;
+        let reportData = null;
+
+        const uploadSection = document.getElementById('uploadSection');
+        const fileInput = document.getElementById('fileInput');
+        const fileInfo = document.getElementById('fileInfo');
+        const fileName = document.getElementById('fileName');
+        const fileSize = document.getElementById('fileSize');
+        const processBtn = document.getElementById('processBtn');
+        const downloadBtn = document.getElementById('downloadBtn');
+        const resetBtn = document.getElementById('resetBtn');
+        const status = document.getElementById('status');
+        const reportSection = document.getElementById('reportSection');
+        const reportContent = document.getElementById('reportContent');
+        const statsGrid = document.getElementById('statsGrid');
+
+        // File input handling
+        uploadSection.addEventListener('click', () => fileInput.click());
+
+        fileInput.addEventListener('change', (e) => {
+            const file = e.target.files[0];
+            if (file && file.name.endsWith('.csv')) {
+                selectedFile = file;
+                fileName.textContent = '📄 ' + file.name;
+                fileSize.textContent = 'Size: ' + (file.size / 1024).toFixed(2) + ' KB';
+                fileInfo.classList.add('visible');
+                processBtn.disabled = false;
+                hideStatus();
+            } else {
+                showStatus('Please select a valid CSV file', 'error');
+                processBtn.disabled = true;
+            }
+        });
+
+        // Drag and drop
+        uploadSection.addEventListener('dragover', (e) => {
+            e.preventDefault();
+            uploadSection.style.background = '#f0f1ff';
+        });
+
+        uploadSection.addEventListener('dragleave', () => {
+            uploadSection.style.background = '#f8f9fa';
+        });
+
+        uploadSection.addEventListener('drop', (e) => {
+            e.preventDefault();
+            uploadSection.style.background = '#f8f9fa';
+            const file = e.dataTransfer.files[0];
+            if (file && file.name.endsWith('.csv')) {
+                selectedFile = file;
+                fileName.textContent = '📄 ' + file.name;
+                fileSize.textContent = 'Size: ' + (file.size / 1024).toFixed(2) + ' KB';
+                fileInfo.classList.add('visible');
+                processBtn.disabled = false;
+                hideStatus();
+            }
+        });
+
+        // Process CSV
+        processBtn.addEventListener('click', () => {
+            if (!selectedFile) return;
+
+            showStatus('Processing your CSV file...', 'loading');
+            processBtn.disabled = true;
+
+            const reader = new FileReader();
+            reader.onload = (e) => {
+                try {
+                    const content = e.target.result;
+                    const lines = content.split(/\r?\n/).filter(l => l.length > 0);
+
+                    if (lines.length < 2) {
+                        showStatus('CSV file is empty or has no data', 'error');
+                        processBtn.disabled = false;
+                        return;
+                    }
+
+                    const headers = lines[0].split(',');
+                    const rows = lines.slice(1).map(l => l.split(','));
+                    const totalRecords = rows.length;
+
+                    // Calculate averages
+                    const sums = new Array(headers.length).fill(0);
+                    const counts = new Array(headers.length).fill(0);
+
+                    rows.forEach(row => {
+                        row.forEach((cell, i) => {
+                            const v = parseFloat(cell);
+                            if (!isNaN(v)) {
+                                sums[i] += v;
+                                counts[i]++;
+                            }
+                        });
+                    });
+
+                    // Track top selling game, genres, and publishers
+                    let topGame = { title: "N/A", sales: 0, critic: "N/A" };
+                    let genreStats = {};
+                    let publisherStats = {};
+                    let regionHighest = { na: 0, jp: 0, pal: 0, other: 0 };
+
+                    rows.forEach(row => {
+                        const gameTitle = row[1] || "Unknown";
+                        const genre = row[2] || "Unknown";
+                        const publisher = row[3] || "Unknown";
+                        const totalSales = parseFloat(row[7]) || 0;
+                        const naSales = parseFloat(row[8]) || 0;
+                        const jpSales = parseFloat(row[9]) || 0;
+                        const palSales = parseFloat(row[10]) || 0;
+                        const otherSales = parseFloat(row[11]) || 0;
+                        const criticScore = parseFloat(row[6]) || 0;
+
+                        // Track top selling game
+                        if (totalSales > topGame.sales) {
+                            topGame = { title: gameTitle, sales: totalSales, critic: criticScore.toFixed(2) };
+                        }
+
+                        // Track genre stats
+                        if (!genreStats[genre]) {
+                            genreStats[genre] = { count: 0, totalSales: 0 };
+                        }
+                        genreStats[genre].count++;
+                        genreStats[genre].totalSales += totalSales;
+
+                        // Track publisher stats
+                        if (!publisherStats[publisher]) {
+                            publisherStats[publisher] = { count: 0, totalSales: 0 };
+                        }
+                        publisherStats[publisher].count++;
+                        publisherStats[publisher].totalSales += totalSales;
+
+                        // Track regional highs
+                        regionHighest.na += naSales;
+                        regionHighest.jp += jpSales;
+                        regionHighest.pal += palSales;
+                        regionHighest.other += otherSales;
+                    });
+
+                    // Find top performing genre
+                    let topGenre = { name: "N/A", sales: 0 };
+                    Object.keys(genreStats).forEach(genre => {
+                        if (genreStats[genre].totalSales > topGenre.sales) {
+                            topGenre = { name: genre, sales: genreStats[genre].totalSales.toFixed(2) };
+                        }
+                    });
+
+                    // Find top publisher
+                    let topPublisher = { name: "N/A", sales: 0 };
+                    Object.keys(publisherStats).forEach(pub => {
+                        if (publisherStats[pub].totalSales > topPublisher.sales) {
+                            topPublisher = { name: pub, sales: publisherStats[pub].totalSales.toFixed(2) };
+                        }
+                    });
+
+                    // Calculate regional percentages
+                    const totalRegionalSales = regionHighest.na + regionHighest.jp + regionHighest.pal + regionHighest.other;
+                    const naPct = totalRegionalSales > 0 ? ((regionHighest.na / totalRegionalSales) * 100).toFixed(1) : 0;
+                    const jpPct = totalRegionalSales > 0 ? ((regionHighest.jp / totalRegionalSales) * 100).toFixed(1) : 0;
+                    const palPct = totalRegionalSales > 0 ? ((regionHighest.pal / totalRegionalSales) * 100).toFixed(1) : 0;
+                    const otherPct = totalRegionalSales > 0 ? ((regionHighest.other / totalRegionalSales) * 100).toFixed(1) : 0;
+
+                    // Generate comprehensive report
+                    let report = "=== EXECUTIVE SALES ANALYTICS SUMMARY REPORT ===\n\n";
+                    report += "DATASET OVERVIEW\n";
+                    report += "Total Games Analyzed," + totalRecords + "\n";
+                    report += "Total Genres," + Object.keys(genreStats).length + "\n";
+                    report += "Total Publishers," + Object.keys(publisherStats).length + "\n\n";
+
+                    report += "SALES PERFORMANCE METRICS\n";
+                    if (counts[7] > 0) {
+                        report += "Total Sales (Millions) :: $" + sums[7].toFixed(2) + "M\n";
+                    }
+                    if (counts[8] > 0) {
+                        report += "Total NA Sales (Millions) :: $" + sums[8].toFixed(2) + "M\n";
+                    }
+                    if (counts[9] > 0) {
+                        report += "Total JP Sales (Millions) :: $" + sums[9].toFixed(2) + "M\n";
+                    }
+                    if (counts[10] > 0) {
+                        report += "Total PAL Sales (Millions) :: $" + sums[10].toFixed(2) + "M\n";
+                    }
+                    if (counts[11] > 0) {
+                        report += "Total Other Sales (Millions) :: $" + sums[11].toFixed(2) + "M\n";
+                    }
+
+                    report += "\nQUALITY METRICS\n";
+                    if (counts[6] > 0) {
+                        report += "Average Critic Score (out of 10) :: " + (sums[6] / counts[6]).toFixed(2) + "\n";
+                    }
+
+                    report += "\nTop Selling Game :: " + topGame.title + " ($" + topGame.sales.toFixed(2) + "M, Score: " + topGame.critic + ")\n";
+                    report += "Top Performing Genre :: " + topGenre.name + " ($" + topGenre.sales + "M)\n";
+                    report += "Top Publisher by Sales :: " + topPublisher.name + " ($" + topPublisher.sales + "M)\n";
+
+                    report += "\nREGIONAL SALES BREAKDOWN\n";
+                    report += "North America (NA) :: " + regionHighest.na.toFixed(2) + "M (" + naPct + "%)\n";
+                    report += "Japan (JP) :: " + regionHighest.jp.toFixed(2) + "M (" + jpPct + "%)\n";
+                    report += "PAL Regions :: " + regionHighest.pal.toFixed(2) + "M (" + palPct + "%)\n";
+                    report += "Other Regions :: " + regionHighest.other.toFixed(2) + "M (" + otherPct + "%)\n\n";
+
+                    report += "STRATEGIC BUSINESS INSIGHTS\n";
+                    const strongestRegion = Math.max(regionHighest.na, regionHighest.jp, regionHighest.pal, regionHighest.other) === regionHighest.na ? "North America" : 
+                                          Math.max(regionHighest.na, regionHighest.jp, regionHighest.pal, regionHighest.other) === regionHighest.jp ? "Japan" :
+                                          Math.max(regionHighest.na, regionHighest.jp, regionHighest.pal, regionHighest.other) === regionHighest.pal ? "PAL Regions" : "Other Regions";
+                    report += "- Primary Market: " + strongestRegion + " drives the majority of regional sales (" + Math.max(naPct, jpPct, palPct, otherPct) + "%)\n";
+                    report += "- Top Genre Focus: " + topGenre.name + " shows strongest market performance\n";
+                    report += "- Quality vs Sales: " + (counts[6] > 0 && (sums[6] / counts[6]) > 7 ? "High critic scores correlate with strong sales" : "Chart improvement opportunities in game quality") + "\n";
+                    report += "- Publisher Concentration: 1 of " + Object.keys(publisherStats).length + " publishers accounts for significant market share\n\n";
+
+                    report += "Report Generated: " + new Date().toString() + "\n";
+
+                    reportData = report;
+                    reportContent.textContent = report;
+                    reportSection.classList.add('visible');
+
+                    // Update stats
+                    document.getElementById('totalRecords').textContent = totalRecords;
+                    if (counts[7] > 0) {
+                        document.getElementById('avgTotalSales').textContent = '$' + (sums[7] / counts[7]).toFixed(2) + 'M';
+                    }
+                    statsGrid.style.display = 'grid';
+
+                    showStatus('✅ CSV processed successfully!', 'success');
+                    downloadBtn.style.display = 'flex';
+                    resetBtn.style.display = 'flex';
+                    processBtn.disabled = false;
+                } catch (error) {
+                    showStatus('Error processing CSV: ' + error.message, 'error');
+                    processBtn.disabled = false;
+                }
+            };
+
+            reader.readAsText(selectedFile);
+        });
+
+        // Download report
+        downloadBtn.addEventListener('click', () => {
+            if (!reportData) return;
+
+            const blob = new Blob([reportData], { type: 'text/csv;charset=utf-8;' });
+            const link = document.createElement('a');
+            const url = URL.createObjectURL(blob);
+
+            link.setAttribute('href', url);
+            link.setAttribute('download', 'summary_report.csv');
+            link.style.visibility = 'hidden';
+
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+
+            showStatus('✅ Report downloaded as summary_report.csv', 'success');
+        });
+
+        // Reset
+        resetBtn.addEventListener('click', () => {
+            selectedFile = null;
+            reportData = null;
+            fileInput.value = '';
+            fileInfo.classList.remove('visible');
+            reportSection.classList.remove('visible');
+            statsGrid.style.display = 'none';
+            downloadBtn.style.display = 'none';
+            resetBtn.style.display = 'none';
+            processBtn.disabled = true;
+            hideStatus();
+        });
+
+        function showStatus(message, type) {
+            status.textContent = message;
+            status.className = 'status visible ' + type;
+        }
+
+        function hideStatus() {
+            status.classList.remove('visible');
+        }
+    </script>
+</body>
+</html>

@@ -1,0 +1,13 @@
+{
+  "name": "csv-analytics",
+  "version": "1.0.0",
+  "description": "CSV Analytics Report Generator",
+  "main": "analytics.js",
+  "scripts": {
+    "start": "node analytics.js"
+  },
+  "dependencies": {
+    "dialog": "^1.1.15",
+    "prompt-sync": "^4.2.0"
+  }
+}
