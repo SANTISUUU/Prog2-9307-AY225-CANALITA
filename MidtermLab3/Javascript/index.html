@@ -1,0 +1,687 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>CSV Dataset Processing| MP05 · MP06 · MP07</title>
+  <link href="https://fonts.googleapis.com/css2?family=Space+Mono:wght@400;700&family=Syne:wght@400;600;700&display=swap" rel="stylesheet"/>
+  <style>
+    /* =============================================
+       ROOT VARIABLES
+       ============================================= */
+    :root {
+      --bg-base:       #0f0c1a;
+      --bg-card:       #1a1530;
+      --bg-elevated:   #231e3d;
+      --bg-input:      #2a2447;
+      --purple-light:  #c4b5f7;
+      --purple-mid:    #8b6fe8;
+      --purple-deep:   #5b3fd4;
+      --purple-border: #3d3060;
+      --text-primary:  #e8e4f8;
+      --text-muted:    #6b5f8a;
+      --pass-color:    #6ee89a;
+      --fail-color:    #f47c7c;
+      --font-display:  'Syne', sans-serif;
+      --font-mono:     'Space Mono', monospace;
+    }
+
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      background: var(--bg-base);
+      color: var(--text-primary);
+      font-family: var(--font-display);
+      min-height: 100vh;
+      padding: 2rem 1.5rem;
+    }
+
+    /* =============================================
+       HEADER
+       ============================================= */
+    .header {
+      margin-bottom: 2rem;
+      border-left: 3px solid var(--purple-mid);
+      padding-left: 1rem;
+    }
+    .header h1 { font-size: 22px; font-weight: 700; color: var(--purple-light); letter-spacing: 0.5px; }
+    .header p  { font-size: 13px; color: var(--text-muted); margin-top: 4px; font-family: var(--font-mono); }
+
+    /* =============================================
+       CARD
+       ============================================= */
+    .card {
+      background: var(--bg-card);
+      border: 0.5px solid var(--purple-border);
+      border-radius: 14px;
+      padding: 1.25rem;
+      margin-bottom: 1rem;
+    }
+
+    /* =============================================
+       LABEL
+       ============================================= */
+    .label {
+      font-size: 10px;
+      font-family: var(--font-mono);
+      color: var(--text-muted);
+      text-transform: uppercase;
+      letter-spacing: 1px;
+      margin-bottom: 10px;
+    }
+
+    /* =============================================
+       FILE SEARCH SECTION
+       ============================================= */
+    .file-search-row {
+      display: flex;
+      gap: 8px;
+      align-items: center;
+      flex-wrap: wrap;
+      margin-bottom: 10px;
+    }
+
+    /* Text input for typing a filename */
+    .search-input {
+      flex: 1;
+      min-width: 180px;
+      padding: 9px 12px;
+      background: var(--bg-input);
+      border: 0.5px solid var(--purple-border);
+      border-radius: 8px;
+      color: var(--text-primary);
+      font-size: 13px;
+      font-family: var(--font-mono);
+      outline: none;
+      transition: border-color 0.15s;
+    }
+    .search-input:focus { border-color: var(--purple-mid); }
+    .search-input::placeholder { color: var(--text-muted); }
+
+    /* Hidden real file input — triggered by Browse button */
+    #fileInput { display: none; }
+
+    /* Browse button — opens the OS file explorer */
+    .browse-btn {
+      padding: 9px 18px;
+      background: var(--bg-elevated);
+      border: 0.5px solid var(--purple-mid);
+      border-radius: 8px;
+      color: var(--purple-light);
+      font-size: 12px;
+      font-family: var(--font-mono);
+      cursor: pointer;
+      white-space: nowrap;
+      transition: background 0.15s;
+    }
+    .browse-btn:hover { background: var(--bg-input); }
+
+    /* Load button — confirms the file selection */
+    .load-btn {
+      padding: 9px 18px;
+      background: var(--purple-deep);
+      border: none;
+      border-radius: 8px;
+      color: #fff;
+      font-size: 12px;
+      font-family: var(--font-mono);
+      cursor: pointer;
+      white-space: nowrap;
+      transition: background 0.15s, transform 0.1s;
+    }
+    .load-btn:hover { background: var(--purple-mid); }
+    .load-btn:active { transform: scale(0.97); }
+
+    .file-info  { font-size: 12px; font-family: var(--font-mono); color: var(--text-muted); margin-top: 6px; }
+    .search-hint { font-size: 11px; font-family: var(--font-mono); color: var(--text-muted); margin-top: 6px; }
+
+    /* =============================================
+       STAT CARDS
+       ============================================= */
+    .stat-row { display: flex; gap: 10px; margin-bottom: 1rem; flex-wrap: wrap; }
+    .stat {
+      background: var(--bg-elevated);
+      border: 0.5px solid var(--purple-border);
+      border-radius: 10px;
+      padding: 12px 18px;
+      flex: 1;
+      min-width: 100px;
+    }
+    .stat-label { font-size: 10px; font-family: var(--font-mono); color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.8px; }
+    .stat-val   { font-size: 26px; font-weight: 700; color: var(--purple-light); margin-top: 2px; }
+
+    /* =============================================
+       TABS
+       ============================================= */
+    .tab-row { display: flex; gap: 8px; margin-bottom: 1rem; flex-wrap: wrap; }
+    .tab {
+      padding: 7px 16px;
+      border: 0.5px solid var(--purple-border);
+      border-radius: 20px;
+      cursor: pointer;
+      font-size: 12px;
+      font-family: var(--font-mono);
+      background: transparent;
+      color: var(--text-muted);
+      transition: all 0.15s;
+    }
+    .tab:hover  { border-color: var(--purple-mid); color: var(--purple-light); }
+    .tab.active { background: var(--purple-deep); border-color: var(--purple-deep); color: #fff; }
+
+    /* =============================================
+       COLUMN SELECT
+       ============================================= */
+    select {
+      width: 100%;
+      padding: 9px 12px;
+      background: var(--bg-input);
+      border: 0.5px solid var(--purple-border);
+      border-radius: 8px;
+      color: var(--text-primary);
+      font-size: 13px;
+      font-family: var(--font-mono);
+      outline: none;
+      cursor: pointer;
+    }
+    select:focus { border-color: var(--purple-mid); }
+
+    /* =============================================
+       BUTTONS ROW
+       ============================================= */
+    .btn-row { display: flex; gap: 8px; flex-wrap: wrap; margin-top: 10px; }
+
+    /* Run button — executes the selected MP */
+    .run-btn {
+      padding: 9px 24px;
+      background: var(--purple-deep);
+      border: none;
+      border-radius: 8px;
+      color: #fff;
+      font-size: 13px;
+      font-family: var(--font-mono);
+      cursor: pointer;
+      transition: background 0.15s, transform 0.1s;
+    }
+    .run-btn:hover  { background: var(--purple-mid); }
+    .run-btn:active { transform: scale(0.97); }
+
+    /* Export button — downloads results as CSV (hidden until results exist) */
+    .export-btn {
+      padding: 9px 20px;
+      background: transparent;
+      border: 0.5px solid var(--purple-mid);
+      border-radius: 8px;
+      color: var(--purple-light);
+      font-size: 13px;
+      font-family: var(--font-mono);
+      cursor: pointer;
+      display: none;
+      transition: background 0.15s, transform 0.1s;
+    }
+    .export-btn:hover  { background: var(--bg-elevated); }
+    .export-btn:active { transform: scale(0.97); }
+
+    /* =============================================
+       RESULT AREA
+       ============================================= */
+    .result-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 12px;
+      flex-wrap: wrap;
+      gap: 8px;
+    }
+    .result-title { font-size: 13px; font-weight: 600; color: var(--purple-light); font-family: var(--font-mono); }
+    .badge {
+      font-size: 11px;
+      font-family: var(--font-mono);
+      padding: 3px 12px;
+      border-radius: 20px;
+      background: var(--bg-elevated);
+      color: var(--purple-light);
+      border: 0.5px solid var(--purple-mid);
+    }
+    .result-scroll {
+      max-height: 400px;
+      overflow-y: auto;
+      scrollbar-width: thin;
+      scrollbar-color: var(--purple-deep) transparent;
+    }
+    .empty {
+      text-align: center;
+      color: var(--text-muted);
+      padding: 3rem;
+      font-size: 13px;
+      font-family: var(--font-mono);
+    }
+
+    /* =============================================
+       TABLE
+       ============================================= */
+    table { width: 100%; border-collapse: collapse; font-size: 12px; font-family: var(--font-mono); }
+    th {
+      text-align: left;
+      padding: 8px 10px;
+      border-bottom: 0.5px solid var(--purple-border);
+      color: var(--text-muted);
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.6px;
+      white-space: nowrap;
+    }
+    td { padding: 7px 10px; border-bottom: 0.5px solid var(--bg-elevated); color: var(--text-primary); }
+    tr:hover td { background: var(--bg-elevated); }
+    tr:last-child td { border-bottom: none; }
+    .pass { color: var(--pass-color); font-weight: 700; }
+    .fail { color: var(--fail-color); font-weight: 700; }
+
+    /* =============================================
+       LAYOUT HELPERS
+       ============================================= */
+    .row { display: flex; gap: 12px; align-items: flex-end; flex-wrap: wrap; }
+    .col { flex: 1; min-width: 160px; }
+
+    /* =============================================
+       TOAST NOTIFICATION
+       ============================================= */
+    .toast {
+      position: fixed;
+      bottom: 2rem;
+      right: 2rem;
+      background: var(--bg-elevated);
+      border: 0.5px solid var(--purple-mid);
+      border-radius: 10px;
+      padding: 12px 20px;
+      font-size: 13px;
+      font-family: var(--font-mono);
+      color: var(--purple-light);
+      opacity: 0;
+      transform: translateY(10px);
+      transition: opacity 0.2s, transform 0.2s;
+      pointer-events: none;
+      z-index: 999;
+    }
+    .toast.show { opacity: 1; transform: translateY(0); }
+  </style>
+</head>
+<body>
+
+  <!-- HEADER -->
+  <div class="header">
+    <h1>Dataset Processor</h1>
+    <p>MP05 · MP06 · MP07 — Pearson VUE Exam Results</p>
+  </div>
+
+  <!-- FILE LOAD CARD -->
+  <div class="card">
+    <div class="label">Load CSV file</div>
+
+    <!-- User can type a filename OR click Browse to open file explorer -->
+    <div class="file-search-row">
+      <input
+        type="text"
+        class="search-input"
+        id="fileNameInput"
+        placeholder="Type filename (e.g. Sample_Data.csv)..."
+      />
+      <input type="file" id="fileInput" accept=".csv" />
+      <label class="browse-btn" for="fileInput">Browse ↗</label>
+      <button class="load-btn" onclick="loadByName()">Load</button>
+    </div>
+
+    <div class="search-hint">Tip: Type your filename and click Load — or click Browse to pick from your file explorer.</div>
+    <div class="file-info" id="fileInfo">No file loaded.</div>
+  </div>
+
+  <!-- MAIN CONTENT — shown after file is loaded -->
+  <div id="statsSection" style="display:none;">
+
+    <!-- Stat cards -->
+    <div class="stat-row">
+      <div class="stat">
+        <div class="stat-label">Records loaded</div>
+        <div class="stat-val" id="statRecords">0</div>
+      </div>
+      <div class="stat">
+        <div class="stat-label">Columns found</div>
+        <div class="stat-val" id="statCols">0</div>
+      </div>
+    </div>
+
+    <!-- MP Tab switcher -->
+    <div class="tab-row">
+      <button class="tab active" onclick="switchTab('mp05', this)">MP05 — Extract column</button>
+      <button class="tab" onclick="switchTab('mp06', this)">MP06 — Unique values</button>
+      <button class="tab" onclick="switchTab('mp07', this)">MP07 — Sort records</button>
+    </div>
+
+    <!-- Column selector + Run + Export -->
+    <div class="card">
+      <div class="label" id="ctrlLabel">Select a column to display</div>
+      <div class="row">
+        <div class="col">
+          <select id="colSelect"></select>
+        </div>
+      </div>
+      <div class="btn-row">
+        <button class="run-btn" onclick="runMP()">Run ↗</button>
+        <button class="export-btn" id="exportBtn" onclick="exportCSV()">Export CSV ↓</button>
+      </div>
+    </div>
+
+    <!-- Output result table -->
+    <div class="card">
+      <div class="result-header">
+        <span class="result-title" id="resultTitle">Output</span>
+        <span id="resultBadge"></span>
+      </div>
+      <div class="result-scroll">
+        <div id="resultArea">
+          <div class="empty">Upload a file and click Run to see results.</div>
+        </div>
+      </div>
+    </div>
+
+  </div>
+
+  <!-- Toast -->
+  <div class="toast" id="toast"></div>
+
+  <!-- =============================================
+       JAVASCRIPT
+       ============================================= -->
+  <script>
+    // All parsed CSV rows stored as string arrays
+    let records = [];
+
+    // Column header names from the CSV file
+    let headers = [];
+
+    // Currently active machine problem
+    let currentMP = 'mp05';
+
+    // Stores the last processed result for export: { headers[], rows[] }
+    let lastResult = null;
+
+    // Fallback column names if CSV header row isn't found
+    const FALLBACK = ["Candidate","Type","Column1","Exam","Language","Exam Date","Score","Result","Time Used"];
+
+    // Column index constants for the dataset
+    const COL_CANDIDATE = 0;
+    const COL_TYPE      = 1;
+    const COL_EXAM      = 3;
+    const COL_SCORE     = 6;
+    const COL_RESULT    = 7;
+
+    // -----------------------------------------------
+    // Browse (file explorer) listener
+    // Fires when user selects a file via the OS dialog
+    // -----------------------------------------------
+    document.getElementById('fileInput').addEventListener('change', function(e) {
+      const file = e.target.files[0];
+      if (!file) return;
+
+      // Show selected filename in the search box
+      document.getElementById('fileNameInput').value = file.name;
+
+      // Read and parse the file content
+      const reader = new FileReader();
+      reader.onload = ev => parseCSV(ev.target.result, file.name);
+      reader.readAsText(file);
+    });
+
+    // -----------------------------------------------
+    // loadByName()
+    // When user types a filename and clicks Load,
+    // we open the file browser dialog so they can
+    // navigate to and confirm the file.
+    // (Browsers cannot access the filesystem by name
+    //  directly for security reasons.)
+    // -----------------------------------------------
+    function loadByName() {
+      const typed = document.getElementById('fileNameInput').value.trim();
+      if (typed) {
+        document.getElementById('fileInfo').textContent =
+          'Looking for "' + typed + '" — select it in the file explorer.';
+      }
+      // Trigger OS file explorer
+      document.getElementById('fileInput').click();
+    }
+
+    // -----------------------------------------------
+    // parseCSVLine()
+    // Splits one CSV line into fields.
+    // Handles quoted fields containing commas.
+    // -----------------------------------------------
+    function parseCSVLine(line) {
+      const fields = [];
+      let cur = '';
+      let inQuotes = false;
+
+      for (let c of line) {
+        if (c === '"') {
+          inQuotes = !inQuotes;
+        } else if (c === ',' && !inQuotes) {
+          fields.push(cur.trim());
+          cur = '';
+        } else {
+          cur += c;
+        }
+      }
+      fields.push(cur.trim());
+      return fields;
+    }
+
+    // -----------------------------------------------
+    // parseCSV()
+    // Reads the full CSV text, skips metadata rows,
+    // finds headers, stores valid data rows.
+    // -----------------------------------------------
+    function parseCSV(text, filename) {
+      // Remove BOM character (common in Excel-exported CSVs)
+      const lines = text.replace(/^\uFEFF/, '').split(/\r?\n/);
+      records = [];
+      headers = [];
+      let started = false;
+
+      for (const line of lines) {
+        if (!started) {
+          // Detect the real header row
+          if (line.includes('Candidate') && line.includes('Exam') && line.includes('Score')) {
+            headers = parseCSVLine(line).slice(0, 9).map((h, i) => h || FALLBACK[i]);
+            started = true;
+          }
+          continue;
+        }
+
+        // Skip blank / empty lines
+        if (line.trim() === '' || line.replace(/,/g, '').trim() === '') continue;
+
+        // Parse and store valid data rows
+        const fields = parseCSVLine(line);
+        if (fields.length >= 9 && fields[0] !== '') records.push(fields);
+      }
+
+      if (!headers.length) headers = FALLBACK;
+
+      // Update stats
+      document.getElementById('statRecords').textContent = records.length;
+      document.getElementById('statCols').textContent = headers.length;
+      document.getElementById('statsSection').style.display = '';
+      document.getElementById('fileInfo').textContent = 'Loaded: ' + (filename || 'file');
+
+      // Populate column dropdown
+      const sel = document.getElementById('colSelect');
+      sel.innerHTML = headers.map((h, i) => `<option value="${i}">${i} — ${h}</option>`).join('');
+
+      // Reset output area
+      document.getElementById('resultArea').innerHTML = '<div class="empty">Click Run to see results.</div>';
+      document.getElementById('exportBtn').style.display = 'none';
+      lastResult = null;
+    }
+
+    // -----------------------------------------------
+    // switchTab()
+    // Switches active MP tab and clears old results.
+    // -----------------------------------------------
+    function switchTab(mp, el) {
+      currentMP = mp;
+      document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+      el.classList.add('active');
+
+      const labels = {
+        mp05: 'Select a column to display',
+        mp06: 'Select a column for unique values',
+        mp07: 'Select a column to sort by'
+      };
+      document.getElementById('ctrlLabel').textContent = labels[mp];
+      document.getElementById('resultArea').innerHTML = '<div class="empty">Click Run to see results.</div>';
+      document.getElementById('resultBadge').innerHTML = '';
+      document.getElementById('resultTitle').textContent = 'Output';
+      document.getElementById('exportBtn').style.display = 'none';
+      lastResult = null;
+    }
+
+    // -----------------------------------------------
+    // runMP()
+    // Routes to the correct MP function based on active tab.
+    // -----------------------------------------------
+    function runMP() {
+      const colIndex = parseInt(document.getElementById('colSelect').value);
+      const colName  = headers[colIndex] || ('Column ' + colIndex);
+      if (currentMP === 'mp05') runMP05(colIndex, colName);
+      else if (currentMP === 'mp06') runMP06(colIndex, colName);
+      else runMP07(colIndex, colName);
+    }
+
+    // -----------------------------------------------
+    // runMP05() - Extract and Display a Column
+    // Lists every value from the chosen column.
+    // Saves result for CSV export.
+    // -----------------------------------------------
+    function runMP05(ci, cn) {
+      document.getElementById('resultTitle').textContent = 'MP05 — ' + cn;
+      document.getElementById('resultBadge').innerHTML = `<span class="badge">${records.length} entries</span>`;
+
+      const resultRows = records.map((r, i) => [String(i + 1), r[ci] || '—']);
+      lastResult = { headers: ['No.', cn], rows: resultRows };
+
+      let html = `<table><thead><tr><th style="width:50px">No.</th><th>${cn}</th></tr></thead><tbody>`;
+      resultRows.forEach(row => { html += `<tr><td>${row[0]}</td><td>${row[1]}</td></tr>`; });
+      html += '</tbody></table>';
+      document.getElementById('resultArea').innerHTML = html;
+      document.getElementById('exportBtn').style.display = 'inline-block';
+    }
+
+    // -----------------------------------------------
+    // runMP06() - Display Unique Values in a Column
+    // Uses a Set to filter duplicates.
+    // Saves result for CSV export.
+    // -----------------------------------------------
+    function runMP06(ci, cn) {
+      const unique = [...new Set(records.map(r => r[ci] || '').filter(v => v !== ''))];
+
+      document.getElementById('resultTitle').textContent = 'MP06 — Unique: ' + cn;
+      document.getElementById('resultBadge').innerHTML = `<span class="badge">${unique.length} unique</span>`;
+
+      const resultRows = unique.map((v, i) => [String(i + 1), v]);
+      lastResult = { headers: ['No.', cn], rows: resultRows };
+
+      let html = `<table><thead><tr><th style="width:50px">No.</th><th>${cn}</th></tr></thead><tbody>`;
+      resultRows.forEach(row => { html += `<tr><td>${row[0]}</td><td>${row[1]}</td></tr>`; });
+      html += '</tbody></table>';
+      document.getElementById('resultArea').innerHTML = html;
+      document.getElementById('exportBtn').style.display = 'inline-block';
+    }
+
+    // -----------------------------------------------
+    // runMP07() - Sort Records Alphabetically
+    // Copies records, sorts by chosen column, displays.
+    // Saves result for CSV export.
+    // -----------------------------------------------
+    function runMP07(ci, cn) {
+      const sorted = [...records].sort((a, b) =>
+        (a[ci] || '').localeCompare(b[ci] || '', undefined, { sensitivity: 'base' })
+      );
+
+      document.getElementById('resultTitle').textContent = 'MP07 — Sorted by: ' + cn;
+      document.getElementById('resultBadge').innerHTML = `<span class="badge">${sorted.length} records</span>`;
+
+      const exportHeaders = ['No.', 'Candidate', 'Type', 'Exam', 'Result', 'Score'];
+      const resultRows = sorted.map((r, i) => [
+        String(i + 1),
+        r[COL_CANDIDATE] || '—',
+        r[COL_TYPE]      || '—',
+        r[COL_EXAM]      || '—',
+        r[COL_RESULT]    || '—',
+        r[COL_SCORE]     || '—'
+      ]);
+
+      lastResult = { headers: exportHeaders, rows: resultRows };
+
+      let html = `<table><thead><tr>
+        <th>No.</th><th>Candidate</th><th>Type</th><th>Exam</th><th>Result</th><th>Score</th>
+      </tr></thead><tbody>`;
+      resultRows.forEach(row => {
+        const res = row[4];
+        const cls = res === 'PASS' ? 'pass' : res === 'FAIL' ? 'fail' : '';
+        html += `<tr>
+          <td>${row[0]}</td><td>${row[1]}</td><td>${row[2]}</td>
+          <td>${row[3]}</td><td class="${cls}">${row[4]}</td><td>${row[5]}</td>
+        </tr>`;
+      });
+      html += '</tbody></table>';
+      document.getElementById('resultArea').innerHTML = html;
+      document.getElementById('exportBtn').style.display = 'inline-block';
+    }
+
+    // -----------------------------------------------
+    // exportCSV()
+    // Converts the last processed result into a CSV
+    // string and triggers a browser file download.
+    // -----------------------------------------------
+    function exportCSV() {
+      if (!lastResult) return;
+
+      // Helper: wraps each field in quotes to handle commas in values
+      const toCSVRow = arr => arr.map(v => `"${String(v).replace(/"/g, '""')}"`).join(',');
+
+      const lines = [
+        toCSVRow(lastResult.headers),          // header row
+        ...lastResult.rows.map(toCSVRow)        // data rows
+      ];
+
+      const csvContent = lines.join('\r\n');
+
+      // Create a downloadable Blob and trigger browser download
+      const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+      const url  = URL.createObjectURL(blob);
+      const link = document.createElement('a');
+
+      // Filename includes the MP name and today's date
+      const ts = new Date().toISOString().slice(0, 10);
+      link.href     = url;
+      link.download = `${currentMP}_export_${ts}.csv`;
+      link.click();
+
+      // Free up memory after download
+      URL.revokeObjectURL(url);
+
+      showToast('Exported as ' + link.download + ' !');
+    }
+
+    // -----------------------------------------------
+    // showToast()
+    // Shows a brief notification at the bottom-right.
+    // -----------------------------------------------
+    function showToast(msg) {
+      const toast = document.getElementById('toast');
+      toast.textContent = msg;
+      toast.classList.add('show');
+      setTimeout(() => toast.classList.remove('show'), 2800);
+    }
+  </script>
+
+</body>
+</html>
